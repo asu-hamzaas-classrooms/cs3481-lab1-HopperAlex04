@@ -43,7 +43,13 @@
 */
 uint64_t Tools::buildLong(uint8_t bytes[LONGSIZE])
 {
-  return 0;
+  uint64_t final = 0;
+  for (uint8_t i = LONGSIZE; i > 0; i--)
+  {
+    final = final << 8;
+    final = final | bytes[i - 1];
+  }
+  return final;
 }
 
 /** 
@@ -67,7 +73,12 @@ uint64_t Tools::buildLong(uint8_t bytes[LONGSIZE])
 */
 uint64_t Tools::getByte(uint64_t source, int32_t byteNum)
 {
-  return 0;
+  uint8_t target = 0;
+  if (byteNum <= 7 && byteNum >= 0)
+  {
+    target = source >> 8 * byteNum;
+  }
+  return target;
 }
 
 /**
@@ -97,7 +108,13 @@ uint64_t Tools::getByte(uint64_t source, int32_t byteNum)
  */
 uint64_t Tools::getBits(uint64_t source, int32_t low, int32_t high)
 {
-  return 0;
+  uint64_t result = 0;
+  if (low >= 0 && high <= 63 && low <= high)
+  {
+    result = source << (63 - high);
+    result = result >> (63 - high + low);
+  }
+  return result;
 }
 
 
@@ -125,7 +142,17 @@ uint64_t Tools::getBits(uint64_t source, int32_t low, int32_t high)
  */
 uint64_t Tools::setBits(uint64_t source, int32_t low, int32_t high)
 {
-  return 0;
+  uint64_t result = source;
+  if (low >= 0 && high <= 63 && low <= high)
+  {
+    uint64_t mask = 0;
+    uint64_t flipper = -1; 
+    mask = getBits(source, low, high);
+    mask = mask | getBits(flipper, low, high);
+    mask = mask << low;
+    result = mask | source;
+  }
+  return result;
 }
 
 /**
@@ -150,7 +177,18 @@ uint64_t Tools::setBits(uint64_t source, int32_t low, int32_t high)
  */
 uint64_t Tools::clearBits(uint64_t source, int32_t low, int32_t high)
 {
-  return 0;
+  uint64_t result = source;
+  if (low >= 0 && high <= 63 && low <= high)
+  {
+    uint64_t mask = 0;
+    uint64_t flipper = -1; 
+    mask = getBits(source, low, high);
+    mask = mask | getBits(flipper, low, high);
+    mask = mask << low;
+    mask = ~mask;
+    result = mask & source;
+  }
+  return result;
 }
 
 
@@ -181,7 +219,18 @@ uint64_t Tools::clearBits(uint64_t source, int32_t low, int32_t high)
 uint64_t Tools::copyBits(uint64_t source, uint64_t dest, 
                          int32_t srclow, int32_t dstlow, int32_t length)
 {
-   return 0; 
+  uint64_t final = dest;
+  if (srclow >= 0 && dstlow >= 0 && length <= 64)
+  {
+    uint64_t mask = 0;
+    uint64_t flipper = -1; 
+    mask = getBits(source, srclow, length - 1 + srclow);
+    printf("%lx\n", mask);
+    mask = mask << srclow;
+    mask = mask | (~ getBits(flipper, srclow, length - 1 + srclow));
+    final = mask & dest;
+  }
+   return final; 
 }
 
 
@@ -206,7 +255,9 @@ uint64_t Tools::copyBits(uint64_t source, uint64_t dest,
  */
 uint64_t Tools::setByte(uint64_t source, int32_t byteNum)
 {
-  return 0;
+  uint64_t final = source;
+  setBits(final, 0 + byteNum * 8, 7 + byteNum * 8);
+  return final;
 }
 
 
@@ -228,7 +279,8 @@ uint64_t Tools::setByte(uint64_t source, int32_t byteNum)
  */
 uint64_t Tools::sign(uint64_t source)
 {
-  return 0;
+  uint64_t sign = getBits(source, 63, 63);
+  return sign;
 }
 
 /**
@@ -258,7 +310,14 @@ bool Tools::addOverflow(uint64_t op1, uint64_t op2)
   //      Thus, the way to check for an overflow is to compare the signs of the
   //      operand and the result.  For example, if you add two positive numbers, 
   //      the result should be positive, otherwise an overflow occurred.
-  return false;
+  bool check = false;
+  uint64_t sum = op1 + op2; 
+  if (sign(op1) == sign(op2) && sign(op1) != sign(sum))
+  {
+    check = true;
+    
+  } 
+  return check;
 }
 
 /**
@@ -287,5 +346,12 @@ bool Tools::subOverflow(uint64_t op1, uint64_t op2)
   //Note: you can not simply use addOverflow in this function.  If you negate
   //op1 in order to an add, you may get an overflow. 
   //NOTE: the subtraction is op2 - op1 (not op1 - op2).
-  return false;
+  uint64_t neg = (~op1) + 1;
+  uint64_t diff = op2 - op1;
+  bool check = false;
+  if ((sign(neg) == sign(op2)) && sign(op1) != sign(op2) && sign(-op1) != sign(diff))
+  {
+    check = true;
+  }
+  return check;
 }
