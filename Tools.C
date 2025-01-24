@@ -220,15 +220,12 @@ uint64_t Tools::copyBits(uint64_t source, uint64_t dest,
                          int32_t srclow, int32_t dstlow, int32_t length)
 {
   uint64_t final = dest;
-  if (srclow >= 0 && dstlow >= 0 && length <= 64)
+  if (srclow >= 0 && dstlow >= 0 && length <= 64 && length + dstlow <= 64)
   {
-    uint64_t mask = 0;
-    uint64_t flipper = -1; 
-    mask = getBits(source, srclow, length - 1 + srclow);
-    printf("%lx\n", mask);
-    mask = mask << srclow;
-    mask = mask | (~ getBits(flipper, srclow, length - 1 + srclow));
-    final = mask & dest;
+    final = clearBits(final, dstlow, dstlow + length - 1);
+    uint64_t mask = getBits(source, srclow, srclow + length - 1);
+    mask = mask << dstlow;
+    final = final | mask;
   }
    return final; 
 }
@@ -256,7 +253,7 @@ uint64_t Tools::copyBits(uint64_t source, uint64_t dest,
 uint64_t Tools::setByte(uint64_t source, int32_t byteNum)
 {
   uint64_t final = source;
-  setBits(final, 0 + byteNum * 8, 7 + byteNum * 8);
+  final = setBits(final, 0 + byteNum * 8, 7 + byteNum * 8);
   return final;
 }
 
